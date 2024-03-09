@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
   // react hook form variables
@@ -10,6 +11,9 @@ const RegisterPage = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
+
+  const router = useRouter();
+
 
   // submit form data to DB
   const onSubmit = handleSubmit(async (data) => {
@@ -30,17 +34,23 @@ const RegisterPage = () => {
           "Content-Type": "application/json",
         },
       });
-      if (!res.ok) {
+
+      
+      if(res.ok){
+        router.push("/auth/login");
+      }else{
         throw new Error("Network response was not ok");
       }
+
       const resJSON = await res.json();
       console.log("resJSON: ", resJSON);
+
     } catch (error) {
       console.error("Error:", error);
     }
   });
 
-  console.log("errors: ", errors);
+  // console.log("errors: ", errors);
 
   return (
     <div className="h-[calc(100vh-7rem)] flex justify-center items-center">

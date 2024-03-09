@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from "bcrypt"
 import db from '@/libs/db'
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -52,11 +53,23 @@ export async function POST(req: NextRequest, res: NextResponse): Promise<NextRes
             );
         }
 
+        //cypher password
+        const cypherPassword = await bcrypt.hash(data.password, 10);
+
         //create user on DB
-        const newUser = await db.user.create({ data })
+        const newUser = await db.user.create({
+            data:{
+                username: data.username,
+                email: data.email,
+                password: cypherPassword,
+            },
+        })
+
+        // send user data without password
+        const { password: _, ...user } = newUser;
 
         //send response
-        return NextResponse.json(newUser);
+        return NextResponse.json(user);
     } catch (error) {
         console.error('Error:', error);
         return new NextResponse("Internal server error", { status: 500 });
