@@ -13,18 +13,17 @@ chat_model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 from langchain.prompts.chat import ChatPromptTemplate
 
 
-# template for CRM sales assistant
+# template for Chat Bot
 crm_template = (
-    """ You are an expert sales assistant specialized in WhatsApp interactions. 
-    You understand the nuances of customer communication and are skilled in providing 
-    product information, answering queries, and guiding customers through the purchasing 
-    process. Your advice is based on the latest sales strategies and CRM best practices."""
+    """ You are an AI trained to extract and understand information from PDFs.
+    Your role is to accurately summarize, answer questions,
+    and provide insights based on the PDF content presented by the user.
+"""
 )
 
 human_template = (
-    """ Customer Inquiry: {customer_inquiry} Provide a concise response that guides the 
-    customer through their query, offers relevant product information, and encourages a 
-    positive sales outcome."""
+    """ Question: {user_question} Answer by referencing the PDF's content,
+      ensuring clarity and directness in your response."""
 )
 
 chat_prompt = ChatPromptTemplate.from_messages([
@@ -36,7 +35,6 @@ chat_prompt = ChatPromptTemplate.from_messages([
 from langchain.chains import LLMChain
 chain = LLMChain(llm=llm, prompt=chat_prompt)
 
-
 # response 
 # response = chain.invoke({
 #     "customer_inquiry": "Can you tell me more about the features of your latest product?"
@@ -44,59 +42,78 @@ chain = LLMChain(llm=llm, prompt=chat_prompt)
 
 # print(response['text'])
 
-# Embeddings and Vector Stores
-from langchain_community.document_loaders import TextLoader
+
+# get data from pdf
+import  os
+from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone, PodSpec
+
+
+pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+indexName = "starter-index"
+
+index = pc.Index(indexName)
+print("Index stats: ", index.describe_index_stats())
+
+
+### initialize langchain with vector store
 from langchain_openai import OpenAIEmbeddings
-from langchain_text_splitters import CharacterTextSplitter
 
+# get openai api key from platform.openai.com
+model_name = 'text-embedding-ada-002'
+embeddings = OpenAIEmbeddings(
+    model=model_name,
+    openai_api_key=os.environ.get("OPENAI_API_KEY")
+)
 
-# get the data on chunks
-loader = TextLoader("./data/enterprise_data.txt")
-documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-docs = text_splitter.split_documents(documents)
-
-# print chunks
-# for i in range(len(docs)):
-#     print(f"CHUNK {i}:\n\n", docs[i].page_content)
-
-
-#turn the chunks on embeddings
-embeddings = OpenAIEmbeddings()
-
-query_result = embeddings.embed_query(docs[0].page_content)
-# print(query_result)
 
 from langchain_pinecone import PineconeVectorStore
-index_name = "index"
-docsearch = PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name)
+text_field = "text"
+vectorstore = PineconeVectorStore(
+    index, embeddings, text_field
+)
 
 
-# vector similarity search
-# query = "What is the company mission?"
-# result  = docsearch.similarity_search(query)
+
+# query = "tell me about naruto"
+# result = vectorstore.similarity_search(
+#     query,  # our search query
+#     namespace="naruto",
+#     k=3  # return 3 most relevant docs
+# )
 # print(result [0].page_content)
 
 
-def answer_question(question):
+
+def answer_question(query):
+
     #find relevant content on vector emdeddings
-    search_result = docsearch.similarity_search(question)
+    search_result = vectorstore.similarity_search(
+        query,  # our search query
+        namespace="naruto",
+        k=1  # return 3 most relevant docs
+    )
+
+    # result
     relevant_content = search_result[0].page_content
     
-    # concatenate revelant content with crm_template
+    # chat bot template
     response_prompt = f"""
-    {crm_template}
-    
-    Customer Inquiry: {question}
-    
-    Based on the following information: {relevant_content}
+        {crm_template}
+        user question: {question}
+        Based on the following information: {relevant_content}
     """
     
-    response = chain.invoke({"customer_inquiry": response_prompt})
+    response = chain.invoke({"user_question": response_prompt})
     
     return response['text']
 
+
 # Example usage
-question = "What products do you have?"
+question = "Who is Naruto"
 response = answer_question(question)
 print(response)
+
+
+
+
