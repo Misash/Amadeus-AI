@@ -10,8 +10,7 @@ from langchain_pinecone import PineconeVectorStore
 
 # get data from pdf
 from langchain_community.document_loaders import PyPDFLoader
-import re, os
-import pinecone
+import os
 from pinecone import Pinecone, ServerlessSpec
 from pinecone import Pinecone, PodSpec
 import base64
@@ -19,27 +18,19 @@ import time
 
 
 def createIndexPinecone(indexName,pc):
-    # pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
-    indexFound = indexName in pc.list_indexes().names()
-
-    # check if the extractive-question-answering index exists
-    if indexFound != True :
-        pc.create_index(
-            name=indexName,
-            dimension=1536,
-            metric="cosine",
-            spec=PodSpec(
-                environment="gcp-starter"
-            )
+    pc.create_index(
+        name=indexName,
+        dimension=1536,
+        metric="cosine",
+        spec=PodSpec(
+            environment="gcp-starter"
         )
+    )
     
-    print(indexFound)
-    return indexFound
 
 
 def deleteIndexPinecone(indexName,pc):
     pc.delete_index(indexName)
-
 
 
 def storeEmbeddingsPinecone(pdfpath,index_name):
@@ -77,85 +68,33 @@ def storeEmbeddingsPinecone(pdfpath,index_name):
     docsearch = PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name, namespace=encodedName)
 
 
+def InitPinecone(indexName,pc,pdfpath):
+
+     # check if the extractive-question-answering index exists
+    indexFound = indexName in pc.list_indexes().names()
+
+     # create an index
+    if indexFound != True :
+        createIndexPinecone()
+    
+    #process Pdf
+    storeEmbeddingsPinecone(pdfpath,indexName)
+    
+
+
+
+
+## MAIN
+
 # connect with pinecone 
 pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
 
-pdf_path = "./pdf/naruto.pdf"
+pdf_path = "./pdf/paper2.pdf"
 index_name = "starter-index"
 
 
-storeEmbeddingsPinecone(pdf_path,index_name)
+InitPinecone(index_name,pc,pdf_path)
 
-
-
-
-
-
-
-# pdfNameFile = os.path.basename(pdfpath) 
-# pdfNameFile = os.path.splitext(pdfNameFile)[0] 
-# timestamp = str(time.time())
-# print("pdf name: ",pdfNameFile)
-# uniqueName = pdfNameFile + "_" + timestamp
-# print("uniqueName: ",uniqueName)
-# encodedName = base64.urlsafe_b64encode(uniqueName.encode()).decode()
-# print("encoded: ", encodedName)
-# decodedBytes = base64.urlsafe_b64decode(encodedName)
-# decodedName = decodedBytes.decode()
-# print("dncoded: ", decodedName)
-
-
-# print chunks
-# for i in range(len(docs)):
-#     # print(f"CHUNK {i}:\n\n")
-#     print(f"CHUNK {i}:\n\n", docs[i].page_content)
-# print("num of chunks: ",len(docs))
-
-
-#turn the chunks on embeddings
-# embeddings = OpenAIEmbeddings()
-# query_result = embeddings.embed_query(docs[0].page_content)
-# print(query_result)
-
-
-#store embeddings on Pinecone
-# from langchain_pinecone import PineconeVectorStore
-# index_name = "starter-index"
-# docsearch = PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name, namespace="naruto")
-
-
-# vector similarity search
-# query = "tell me about naruto"
-# # result  = docsearch.similarity_search(query)
-# result  = docsearch.similarity_search(
-#     namespace="naruto",
-#     query = query
-# )
-# print(result [0].page_content)
-
-
-# def answer_question(question):
-#     #find relevant content on vector emdeddings
-#     search_result = docsearch.similarity_search(question)
-#     relevant_content = search_result[0].page_content
-    
-#     # concatenate revelant content with crm_template
-#     response_prompt = f"""
-#     {crm_template}
-    
-#     user question: {question}
-    
-#     Based on the following information: {relevant_content}
-#     """
-    
-#     response = chain.invoke({"user_question": response_prompt})
-    
-#     return response['text']
-
-# # Example usage
-# question = "What products do you have?"
-# response = answer_question(question)
-# print(response)
 
 
 
