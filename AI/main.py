@@ -79,9 +79,3 @@ async def chat(request: QuestionRequest):
     
     response = chain.invoke({"user_question": response_prompt})
     return {"response": response['text']}
-
-
-
-
-
-
