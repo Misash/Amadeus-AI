@@ -104,7 +104,7 @@ def InitPinecone(indexName,pc,pdfpath):
 # InitPinecone(index_name,pc,pdf_path)
 
 
-# endpoint to ping
+# endpoint 
 @app.get("/")
 async def root():
     return {"message": "Hi, I'm the Amadeus AI Vectorization API"}
