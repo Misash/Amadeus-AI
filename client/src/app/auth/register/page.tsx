@@ -72,7 +72,7 @@ const RegisterPage = () => {
           className="p-3 rounded block mb-2 bg-slate-900 text-slate-300 w-full"
           placeholder="naruto123"
         />
-        {errors.username && (
+        {errors.username && typeof errors.username.message === 'string' &&(
           <span className="text-red-500 text-xs">
             {errors.username.message}
           </span>
@@ -93,7 +93,7 @@ const RegisterPage = () => {
           className="p-3 rounded block mb-2 bg-slate-900 text-slate-300 w-full"
           placeholder="naruto@email.com"
         />
-        {errors.email && (
+        {errors.email && typeof errors.email.message === 'string' &&(
           <span className="text-red-500 text-xs">{errors.email.message}</span>
         )}
 
@@ -112,7 +112,7 @@ const RegisterPage = () => {
           className="p-3 rounded block mb-2 bg-slate-900 text-slate-300 w-full"
           placeholder="*******"
         />
-        {errors.password && (
+        {errors.password && typeof errors.password.message === 'string' &&(
           <span className="text-red-500 text-xs">
             {errors.password.message}
           </span>
@@ -136,7 +136,7 @@ const RegisterPage = () => {
           className="p-3 rounded block mb-2 bg-slate-900 text-slate-300 w-full"
           placeholder="*******"
         />
-        {errors.confirmPassword && (
+        {errors.confirmPassword && typeof errors.confirmPassword.message === 'string' && (
           <span className="text-red-500 text-xs">
             {errors.confirmPassword.message}
           </span>

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth/next"; 
-import { authSettings } from "@/app/api/auth/[...nextauth]/route";
+import { authSettings } from "@/utils/authSettings";
 
 async function Navbar() {
+
+
 
   const session = await getServerSession(authSettings);
   console.log("session: ",session);
