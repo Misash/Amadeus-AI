@@ -39,6 +39,5 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 ```bash
     #sync wtih prisma schema 
     npx prisma db push
-    
     npx prisma generate && next build
 ```
