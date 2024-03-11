@@ -4,8 +4,6 @@ import { authSettings } from "@/utils/authSettings";
 
 async function Navbar() {
 
-
-
   const session = await getServerSession(authSettings);
   console.log("session: ",session);
 
