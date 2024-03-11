@@ -15,14 +15,13 @@ create and .env with api keys
 
 ## Install Dependencies
 ```bash
-  python3 -m venv .venv
-  source .venv/bin/activate
-  pip3 install -r requirements.txt
+  chmod +x init.sh
+  ./init.sh
 ```
 
 ## Run locally 
 ```bash
     source .venv/bin/activate
-    python3 main.py
+    uvicorn main:app --reload
 ```
 

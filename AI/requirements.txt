@@ -4,3 +4,6 @@ pinecone-client
 openai
 langchain-openai
 langchain_pinecone
+fastapi
+uvicorn
+pydantic

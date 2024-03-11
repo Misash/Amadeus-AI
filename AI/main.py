@@ -1,118 +1,86 @@
+from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv, find_dotenv
+from langchain_openai import ChatOpenAI, OpenAI
+from langchain.prompts.chat import ChatPromptTemplate
+from langchain.chains import LLMChain
+import os
+from pydantic import BaseModel
+from pinecone import Pinecone
+from langchain_openai import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+
 # Load environment variables
-from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv())
 
-from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAI
+# FastAPI app initialization
+app = FastAPI()
 
-#defining LLm model
+# Initialize your components here
 llm = OpenAI()
 chat_model = ChatOpenAI(model="gpt-3.5-turbo-0125")
-
- 
-from langchain.prompts.chat import ChatPromptTemplate
-
-
-# template for Chat Bot
-crm_template = (
+chat_template = (
     """ You are an AI trained to extract and understand information from PDFs.
     Your role is to accurately summarize, answer questions,
     and provide insights based on the PDF content presented by the user.
 """
 )
-
-human_template = (
-    """ Question: {user_question} Answer by referencing the PDF's content,
+human_template =  """
+       Question: {user_question} Answer by referencing the PDF's content,
       ensuring clarity and directness in your response."""
-)
 
 chat_prompt = ChatPromptTemplate.from_messages([
-    ("system", crm_template),
+    ("system", chat_template),
     ("human", human_template),
 ])
-
-# llm chain
-from langchain.chains import LLMChain
 chain = LLMChain(llm=llm, prompt=chat_prompt)
 
-# response 
-# response = chain.invoke({
-#     "customer_inquiry": "Can you tell me more about the features of your latest product?"
-# })
-
-# print(response['text'])
-
-
-# get data from pdf
-import  os
-from pinecone import Pinecone, ServerlessSpec
-from pinecone import Pinecone, PodSpec
-
-
+# Pinecone setup
 pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
 indexName = "starter-index"
-
 index = pc.Index(indexName)
-print("Index stats: ", index.describe_index_stats())
 
-
-### initialize langchain with vector store
-from langchain_openai import OpenAIEmbeddings
-
-# get openai api key from platform.openai.com
 model_name = 'text-embedding-ada-002'
 embeddings = OpenAIEmbeddings(
     model=model_name,
     openai_api_key=os.environ.get("OPENAI_API_KEY")
 )
 
-
-from langchain_pinecone import PineconeVectorStore
 text_field = "text"
-vectorstore = PineconeVectorStore(
-    index, embeddings, text_field
-)
+vectorstore = PineconeVectorStore(index, embeddings, text_field)
 
 
+class QuestionRequest(BaseModel):
+    query: str
+    namespace: str
 
-# query = "tell me about naruto"
-# result = vectorstore.similarity_search(
-#     query,  # our search query
-#     namespace="naruto",
-#     k=3  # return 3 most relevant docs
-# )
-# print(result [0].page_content)
+# endpoints 
+
+@app.get("/")
+async def root():
+    return {"message": "Hi, I'm Amadeus AI"}
 
 
-
-def answer_question(query):
-
-    #find relevant content on vector emdeddings
+@app.post("/chat")
+async def chat(request: QuestionRequest):
+    
     search_result = vectorstore.similarity_search(
-        query,  # our search query
-        namespace="naruto",
-        k=1  # return 3 most relevant docs
+        request.query,
+        namespace=request.namespace,
+        k=1
     )
-
-    # result
+    
     relevant_content = search_result[0].page_content
     
-    # chat bot template
     response_prompt = f"""
-        {crm_template}
-        user question: {question}
+        {chat_template}
+        user question: {request.query}
         Based on the following information: {relevant_content}
     """
     
     response = chain.invoke({"user_question": response_prompt})
-    
-    return response['text']
+    return {"response": response['text']}
 
 
-# Example usage
-question = "Who is Naruto"
-response = answer_question(question)
-print(response)
 
 
 
