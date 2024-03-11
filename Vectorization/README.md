@@ -29,7 +29,7 @@ create and .env with api keys
     uvicorn main:app --reload
 ```
 
-## Run with Docker
+## Docker
 
 ```bash
     # build Docker image
@@ -43,3 +43,13 @@ create and .env with api keys
     # push image to docker Hub
     docker push username/pdf_api:version
 ```
+
+## Deploy on Google Run
+
+```bash
+    # Measure latency before select the region
+    https://gcping.com/
+    # Port according to Dockerfile
+    port: 8000
+```
+
