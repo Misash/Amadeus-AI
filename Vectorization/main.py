@@ -82,6 +82,9 @@ def storeEmbeddingsPinecone(pdfpath,index_name):
     #store embeddings on namespace Pinecone Vectore Store
     PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name, namespace=encodedName)
 
+    # return
+    return encodedName
+
 
 def InitPinecone(indexName,pc,pdfpath):
 
@@ -132,12 +135,14 @@ async def upload_pdf(pdf: UploadFile = File(...), index_name: str = "starter-ind
             createIndexPinecone(index_name)
 
         # Process PDF and store embeddings
-        storeEmbeddingsPinecone(temp_pdf_path, index_name)
+        namespace = storeEmbeddingsPinecone(temp_pdf_path, index_name)
 
         # Cleanup: remove the temporary PDF file
         os.remove(temp_pdf_path)
 
-        return {"message": "PDF processed and embeddings stored successfully"}
+        # return the namespace name
+        return {"namespace": namespace }
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
                             
