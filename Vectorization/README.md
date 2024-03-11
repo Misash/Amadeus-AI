@@ -20,6 +20,13 @@ create and .env with api keys
   pip3 install -r requirements.txt
 ```
 
+## FastAPI
+
+```bash
+  pip install "fastapi[all]"
+  uvicorn main:app --reload
+```
+
 ## Run locally 
 ```bash
     source .venv/bin/activate

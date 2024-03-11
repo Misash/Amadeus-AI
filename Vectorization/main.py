@@ -16,8 +16,24 @@ from pinecone import Pinecone, PodSpec
 import base64
 import time
 
+# endpoints
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
+import shutil
+
+
+
+# Load environment variables
+load_dotenv(find_dotenv())
+
+app = FastAPI()
+
+# Initialize Pinecone
+pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+
 
 def createIndexPinecone(indexName,pc):
+    # create new Index
     pc.create_index(
         name=indexName,
         dimension=1536,
@@ -27,7 +43,6 @@ def createIndexPinecone(indexName,pc):
         )
     )
     
-
 
 def deleteIndexPinecone(indexName,pc):
     pc.delete_index(indexName)
@@ -65,38 +80,65 @@ def storeEmbeddingsPinecone(pdfpath,index_name):
     # decodedName = decodedBytes.decode()
 
     #store embeddings on namespace Pinecone Vectore Store
-    docsearch = PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name, namespace=encodedName)
+    PineconeVectorStore.from_documents(docs, embeddings, index_name=index_name, namespace=encodedName)
 
 
 def InitPinecone(indexName,pc,pdfpath):
 
-     # check if the extractive-question-answering index exists
+    # check if the extractive-question-answering index exists
     indexFound = indexName in pc.list_indexes().names()
 
-     # create an index
+    # create an index
     if indexFound != True :
         createIndexPinecone()
     
-    #process Pdf
+    # process Pdf
     storeEmbeddingsPinecone(pdfpath,indexName)
     
-
-
-
-
+    
 ## MAIN
-
 # connect with pinecone 
-pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
-
-pdf_path = "./pdf/paper2.pdf"
-index_name = "starter-index"
-
-
-InitPinecone(index_name,pc,pdf_path)
+# pc = Pinecone(api_key=os.environ.get("PINECONE_API_KEY"))
+# pdf_path = "./pdf/paper2.pdf"
+# index_name = "starter-index"
+# InitPinecone(index_name,pc,pdf_path)
 
 
+# endpoint to ping
+@app.get("/")
+async def root():
+    return {"message": "Hi, I'm the Amadeus AI Vectorization API"}
 
 
 
+# Endpoint to upload PDF and process
+@app.post("/upload_pdf/")
+async def upload_pdf(pdf: UploadFile = File(...), index_name: str = "starter-index"):
+    try:
+
+        temp_dir = "./temp"
+        # verify if temp_dir exists
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        temp_pdf_path = f"./temp/{pdf.filename}"
+
+        # Save uploaded file temporarily
+        with open(temp_pdf_path, 'wb') as buffer:
+            shutil.copyfileobj(pdf.file, buffer)
+
+        # Ensure index exists or create it
+        if index_name not in pc.list_indexes().names():
+            createIndexPinecone(index_name)
+
+        # Process PDF and store embeddings
+        storeEmbeddingsPinecone(temp_pdf_path, index_name)
+
+        # Cleanup: remove the temporary PDF file
+        os.remove(temp_pdf_path)
+
+        return {"message": "PDF processed and embeddings stored successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+                            
 
