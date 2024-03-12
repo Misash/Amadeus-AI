@@ -6,9 +6,9 @@ function DashboardPage() {
   // pdf file variables
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isFileUploaded, setIsFileUploaded] = useState(true);
+  const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [error, setError] = useState("");
-  const [namespace, setNamespace] = useState("naruto");
+  const [namespace, setNamespace] = useState("");
 
   // chat variables
   const [question, setQuestion] = useState("");
@@ -75,7 +75,16 @@ function DashboardPage() {
 
       // update chat history
       const data = await response.json();
-      setChat([...chat, { question, answer: data.response }]);
+
+      //save user chat history
+      setChat([...chat, { author: "user", question: question }]);
+      
+      //save AI chat history
+      setChat((currentChat) => [
+        ...currentChat,
+        { author: "ai", answer: data.response },
+      ]);
+
       setQuestion("");
     } catch (error) {
       console.error("Error:", error);
@@ -90,8 +99,8 @@ function DashboardPage() {
         {!isFileUploaded ? (
           // upload PDF
           <>
-            <h1 className="text-5xl mb-4">Chat with your PDF</h1>
-            <p className="text-slate-400 mb-4">
+            <h1 className="text-6xl mb-8">Chat with your PDF</h1>
+            <p className="text-slate-400 mb-16">
               Upload a PDF file to start chatting with its content.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,53 +110,90 @@ function DashboardPage() {
                 accept="application/pdf"
                 className="file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
               />
+
+              <br/>
+              {/* upload and Chat button */}
               <button
                 type="submit"
                 disabled={isUploading}
-                className="bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded"
+                className="bg-blue-500 hover:bg-blue-700 font-bold py-2 px-8  rounded"
               >
                 {isUploading ? "Uploading..." : "Upload and Chat"}
               </button>
+
               {error && <div className="text-red-500">{error}</div>}
             </form>
           </>
         ) : (
-          
-          //Chat with PDF
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <form onSubmit={handleChat} className="flex space-x-2">
-              {/* query input */}
-              <input
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask something..."
-                className="input input-bordered input-primary w-full max-w-xs"
-                required
-              />
-              {/* submit query button */}
-              <button
-                type="submit"
-                disabled={isLoading || !question}
-                className="btn btn-primary"
-              >
-                {isLoading ? "Asking..." : "Ask"}
-              </button>
-            </form>
-
-          {/* chat history */}
-            <div className="space-y-2 w-full max-w-lg">
+          <section className="ml-40 mr-40 mt-5 h-[calc(100vh-7rem)] flex flex-col justify-between bg-neutral-950 text-white">
+            <div className="px-4 py-2 overflow-y-auto">
+              {/* Chat history */}
               {chat.map((entry, index) => (
-                <div key={index} className="chat-message">
-                  <div className="font-bold">You asked:</div>
-                  <p className="pl-4">{entry.question}</p>
-                  <div className="font-bold">AI replied:</div>
-                  <p className="pl-4">{entry.answer}</p>
+                <div
+                  key={index}
+                  className={`flex flex-col ${
+                    entry.author === "user" ? "items-end" : "items-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[60%] text-left p-3 rounded-2xl ${
+                      entry.author === "user" ? "bg-blue-500" : "bg-gray-700"
+                    }`}
+                  >
+                    <p>{entry.question}</p>
+                    <p className="text-gray-300">{entry.answer}</p>
+                  </div>
+                 
                 </div>
               ))}
             </div>
 
-          </div>
+            {/* Input area */}
+            <div className="bg-neutral-800 p-4 rounded-lg">
+              {!isFileUploaded ? (
+                <>
+                  <h1 className="text-xl mb-2">Chat with your PDF</h1>
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col space-y-2"
+                  >
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept="application/pdf"
+                      className="file:rounded-lg file:border-0 file:bg-neutral-700 file:text-white"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isUploading}
+                      className="bg-blue-500 hover:bg-blue-600 font-bold py-2 rounded-lg"
+                    >
+                      {isUploading ? "Uploading..." : "Upload PDF"}
+                    </button>
+                    {error && <div className="text-red-500">{error}</div>}
+                  </form>
+                </>
+              ) : (
+                <form onSubmit={handleChat} className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Ask something..."
+                    className="flex-1 p-2 input input-bordered input-neutral bg-neutral-700 text-white rounded-lg"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || !question}
+                    className="btn p-2 bg-green-400 hover:bg-green-100 text-black rounded-lg"
+                  >
+                    {isLoading ? "Sending..." : "Send"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </section>
         )}
       </div>
     </section>
