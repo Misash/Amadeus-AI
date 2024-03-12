@@ -9,7 +9,10 @@ jobs:
       - uses: actions/setup-node@v2
       - name: Install packages
         run: npm install
+        working-directory: ./client
       - name: Init Prisma
-        run: npx prisma
+        run: npx prisma generate
+        working-directory: ./client
       - name: build
         run: npm run build
+        working-directory: ./client
